@@ -1,4 +1,3 @@
-import React from 'react'
 import { easing } from 'maath';
 import { useSnapshot } from 'valtio';
 import { useFrame } from '@react-three/fiber';
@@ -21,26 +20,28 @@ const Shirt = () => {
     <group key={stateString}>
       <mesh
         castShadow
+        receiveShadow
         geometry={nodes.T_Shirt_male.geometry}
         material={materials.lambert1}
         material-roughness={1}
+        material-metalness={0}
         dispose={null}
       >
         {snap.isFullTexture && (
-          <Decal 
-            position={[0, 0, 0]}
-            rotation={[0, 0, 0]}
-            scale={1}
+          <Decal
+            position={snap.fullPosition}
+            rotation={snap.fullRotation}
+            scale={snap.fullScale}
             map={fullTexture}
-           
+
           />
         )}
 
         {snap.isLogoTexture && (
-          <Decal 
-            position={[0, 0.04, 0.15]}
-            rotation={[0, 0, 0]}
-            scale={0.15}
+          <Decal
+            position={snap.logoPosition}
+            rotation={snap.logoRotation}
+            scale={snap.logoScale}
             map={logoTexture}
             Anisotropy={16}
             depthTest={false}

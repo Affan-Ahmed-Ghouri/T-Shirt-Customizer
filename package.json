@@ -1,0 +1,41 @@
+{
+  "name": "t-shirt-customizer",
+  "version": "1.0.0",
+  "description": "A modern 3D T-shirt customization application with AI-generated designs",
+  "scripts": {
+    "install:all": "npm install && cd client && npm install && cd ../server && npm install",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:client": "cd client && npm run dev",
+    "dev:server": "cd server && npm start",
+    "build": "cd client && npm run build",
+    "build:server": "cd server && npm run build",
+    "preview": "cd client && npm run preview",
+    "start": "concurrently \"npm run dev:server\" \"npm run preview:client\""
+  },
+  "keywords": [
+    "three.js",
+    "react",
+    "3d",
+    "t-shirt",
+    "customizer",
+    "ai",
+    "openai",
+    "dalle"
+  ],
+  "author": "Affan Ahmed Ghouri <Notjerry>",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Affan-Ghouri/T-Shirt-Customizer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Affan-Ghouri/T-Shirt-Customizer/issues"
+  },
+  "homepage": "https://github.com/Affan-Ghouri/T-Shirt-Customizer#readme"
+}

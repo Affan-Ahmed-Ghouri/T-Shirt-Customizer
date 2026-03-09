@@ -1,38 +1,43 @@
 import express from 'express';
 import * as dotenv from 'dotenv';
-import { Configuration, OpenAIApi} from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 dotenv.config();
 
 const router = express.Router();
 
-const config = new Configuration({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-const openai = new OpenAIApi(config);
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 router.route('/').get((req, res) => {
-  res.status(200).json({ message: "Hello from DALL.E ROUTES" })
+  res.status(200).json({ message: "Hello from Gemini Image Generation" })
 })
 
 router.route('/').post(async (req, res) => {
   try {
     const { prompt } = req.body;
 
-    const response = await openai.createImage({
-      prompt,
-      n: 1,
-      size: '1024x1024',
-      response_format: 'b64_json'
+    const model = genAI.getGenerativeModel({ 
+      model: 'gemini-2.0-flash-exp-image-generation',
+      generationConfig: {
+        responseModalities: ['IMAGE', 'TEXT'],
+      }
     });
 
-    const image = response.data.data[0].b64_json;
+    const result = await model.generateContent(prompt);
+
+    const response = result.response;
+    const imagePart = response.candidates[0].content.parts.find(part => part.inlineData);
+
+    if (!imagePart || !imagePart.inlineData) {
+      throw new Error('No image generated');
+    }
+
+    const image = imagePart.inlineData.data;
 
     res.status(200).json({ photo: image });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Something went wrong" })
+    console.error('Error:', error);
+    res.status(500).json({ message: "Something went wrong", error: error.message })
   }
 })
 
