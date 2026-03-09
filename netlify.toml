@@ -1,5 +1,5 @@
 [build]
-  command = "cd client && npm ci && npm run build"
+  command = "npm ci && cd client && npm ci && npm run build"
   publish = "client/dist"
 
 [build.environment]
