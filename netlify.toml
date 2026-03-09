@@ -6,8 +6,8 @@
   NODE_VERSION = "18"
 
 [[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/:splat"
+  from = "/api/v1/dalle"
+  to = "/.netlify/functions/api"
   status = 200
 
 [[redirects]]
