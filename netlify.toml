@@ -4,6 +4,7 @@
 
 [build.environment]
   NODE_VERSION = "18"
+  FREEPIK_API_KEY = ""
 
 [[redirects]]
   from = "/api/v1/dalle"

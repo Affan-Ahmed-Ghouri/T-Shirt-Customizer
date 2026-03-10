@@ -1,43 +1,79 @@
 import express from 'express';
 import * as dotenv from 'dotenv';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import axios from 'axios';
 
 dotenv.config();
 
 const router = express.Router();
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const FREEPIK_API_KEY = process.env.FREEPIK_API_KEY;
 
 router.route('/').get((req, res) => {
-  res.status(200).json({ message: "Hello from Gemini Image Generation" })
+  res.status(200).json({ message: "Hello from Freepik Image Generation" })
 })
 
 router.route('/').post(async (req, res) => {
   try {
     const { prompt } = req.body;
 
-    const model = genAI.getGenerativeModel({ 
-      model: 'gemini-2.0-flash-exp-image-generation',
-      generationConfig: {
-        responseModalities: ['IMAGE', 'TEXT'],
+    const createResponse = await axios.post(
+      'https://api.freepik.com/v1/ai/text-to-image/seedream-v4',
+      {
+        prompt: prompt,
+        image: {
+          size: "square_1_1"
+        }
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'x-freepik-api-key': FREEPIK_API_KEY
+        }
       }
-    });
+    );
 
-    const result = await model.generateContent(prompt);
+    const taskId = createResponse.data.data.task_id;
 
-    const response = result.response;
-    const imagePart = response.candidates[0].content.parts.find(part => part.inlineData);
+    let result;
+    let attempts = 0;
+    const maxAttempts = 30;
 
-    if (!imagePart || !imagePart.inlineData) {
-      throw new Error('No image generated');
+    while (attempts < maxAttempts) {
+      await new Promise(r => setTimeout(r, 2000));
+      
+      const statusResponse = await axios.get(
+        `https://api.freepik.com/v1/ai/text-to-image/seedream-v4/${taskId}`,
+        {
+          headers: {
+            'Accept': 'application/json',
+            'x-freepik-api-key': FREEPIK_API_KEY
+          }
+        }
+      );
+
+      result = statusResponse.data.data;
+      
+      if (result.status === 'COMPLETED') {
+        break;
+      } else if (result.status === 'FAILED') {
+        throw new Error('Image generation failed');
+      }
+      
+      attempts++;
     }
 
-    const image = imagePart.inlineData.data;
+    if (!result || result.status !== 'COMPLETED') {
+      throw new Error('Image generation timed out');
+    }
 
-    res.status(200).json({ photo: image });
+    const imageUrl = result.generated[0];
+    const imageResponse = await axios.get(imageUrl, { responseType: 'base64' });
+
+    res.status(200).json({ photo: imageResponse.data });
   } catch (error) {
-    console.error('Error:', error);
-    res.status(500).json({ message: "Something went wrong", error: error.message })
+    console.error('Error:', error.response?.data || error.message);
+    res.status(500).json({ message: "Something went wrong", error: error.response?.data?.message || error.message })
   }
 })
 

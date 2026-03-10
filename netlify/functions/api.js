@@ -1,4 +1,4 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const axios = require('axios');
 
 exports.handler = async (event, context) => {
   if (event.httpMethod !== 'POST') {
@@ -10,24 +10,61 @@ exports.handler = async (event, context) => {
 
   try {
     const { prompt } = JSON.parse(event.body);
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const FREEPIK_API_KEY = process.env.FREEPIK_API_KEY;
 
-    const model = genAI.getGenerativeModel({ 
-      model: 'gemini-2.0-flash-exp-image-generation',
-      generationConfig: {
-        responseModalities: ['IMAGE', 'TEXT'],
+    const createResponse = await axios.post(
+      'https://api.freepik.com/v1/ai/text-to-image/seedream-v4',
+      {
+        prompt: prompt,
+        image: {
+          size: "square_1_1"
+        }
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'x-freepik-api-key': FREEPIK_API_KEY
+        }
       }
-    });
+    );
 
-    const result = await model.generateContent(prompt);
-    const response = result.response;
-    const imagePart = response.candidates[0].content.parts.find(part => part.inlineData);
+    const taskId = createResponse.data.data.task_id;
 
-    if (!imagePart || !imagePart.inlineData) {
-      throw new Error('No image generated');
+    let result;
+    let attempts = 0;
+    const maxAttempts = 30;
+
+    while (attempts < maxAttempts) {
+      await new Promise(r => setTimeout(r, 2000));
+      
+      const statusResponse = await axios.get(
+        `https://api.freepik.com/v1/ai/text-to-image/seedream-v4/${taskId}`,
+        {
+          headers: {
+            'Accept': 'application/json',
+            'x-freepik-api-key': FREEPIK_API_KEY
+          }
+        }
+      );
+
+      result = statusResponse.data.data;
+      
+      if (result.status === 'COMPLETED') {
+        break;
+      } else if (result.status === 'FAILED') {
+        throw new Error('Image generation failed');
+      }
+      
+      attempts++;
     }
 
-    const image = imagePart.inlineData.data;
+    if (!result || result.status !== 'COMPLETED') {
+      throw new Error('Image generation timed out');
+    }
+
+    const imageUrl = result.generated[0];
+    const imageResponse = await axios.get(imageUrl, { responseType: 'base64' });
 
     return {
       statusCode: 200,
@@ -35,13 +72,13 @@ exports.handler = async (event, context) => {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*'
       },
-      body: JSON.stringify({ photo: image })
+      body: JSON.stringify({ photo: imageResponse.data })
     };
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error:', error.response?.data || error.message);
     return {
       statusCode: 500,
-      body: JSON.stringify({ message: 'Something went wrong', error: error.message })
+      body: JSON.stringify({ message: 'Something went wrong', error: error.response?.data?.message || error.message })
     };
   }
 };

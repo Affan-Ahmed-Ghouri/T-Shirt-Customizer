@@ -28,7 +28,7 @@
     "concurrently": "^8.2.2"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.21.0",
+    "axios": "^1.13.6",
     "concurrently": "^8.2.2"
   },
   "repository": {
