@@ -2,6 +2,7 @@
   "name": "client",
   "private": true,
   "version": "0.0.0",
+  "homepage": "https://affan-ahmed-ghouri.github.io/T-Shirt-Customizer/",
   "type": "module",
   "scripts": {
     "dev": "vite",
